@@ -1,5 +1,5 @@
 import { cache } from 'react';
-// import { postgresToGraphql } from '../graphql/transform';
+import { postgresToGraphql } from '../graphql/transform';
 import type { Animal } from '../migrations/00000-createTableAnimals';
 import { sql } from './connect';
 
@@ -12,7 +12,8 @@ export const getAnimalsInsecure = cache(async () => {
     ORDER BY
       id
   `;
-  // return animals.map(postgresToGraphql);
+
+  return animals.map(postgresToGraphql);
 });
 
 export const getAnimalInsecure = cache(async (id: number) => {
@@ -24,7 +25,7 @@ export const getAnimalInsecure = cache(async (id: number) => {
     WHERE
       id = ${id}
   `;
-  // return postgresToGraphql(animal);
+  return postgresToGraphql(animal);
 });
 
 export const createAnimalInsecure = cache(
@@ -42,7 +43,7 @@ export const createAnimalInsecure = cache(
         animals.*
     `;
 
-    // return postgresToGraphql(animal);
+    return postgresToGraphql(animal);
   },
 );
 
@@ -59,7 +60,7 @@ export const updateAnimalInsecure = cache(async (updatedAnimal: Animal) => {
       animals.*
   `;
 
-  // return postgresToGraphql(animal);
+  return postgresToGraphql(animal);
 });
 
 export const deleteAnimalInsecure = cache(async (animalId: Animal['id']) => {
@@ -70,5 +71,5 @@ export const deleteAnimalInsecure = cache(async (animalId: Animal['id']) => {
     RETURNING
       animals.*
   `;
-  // return postgresToGraphql(animal);
+  return postgresToGraphql(animal);
 });
