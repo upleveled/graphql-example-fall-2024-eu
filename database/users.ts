@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { postgresToGraphql } from '../graphql/transform';
 import type { User } from '../migrations/00002-createTableUsers';
 import type { Session } from '../migrations/00004-createTableSessions';
 import { sql } from './connect';
@@ -51,7 +52,7 @@ export const createUserInsecure = cache(
         users.id,
         users.username
     `;
-    return user;
+    return postgresToGraphql(user);
   },
 );
 
