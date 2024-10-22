@@ -1,8 +1,11 @@
+import crypto from 'node:crypto';
 import { gql } from '@apollo/client';
 import { ApolloServer } from '@apollo/server';
 import { startServerAndCreateNextHandler } from '@as-integrations/next';
 import { makeExecutableSchema } from '@graphql-tools/schema';
+import bcrypt from 'bcrypt';
 import { GraphQLError } from 'graphql';
+import { cookies } from 'next/headers';
 import type { NextRequest, NextResponse } from 'next/server';
 import {
   createAnimalInsecure,
@@ -11,6 +14,8 @@ import {
   getAnimalsInsecure,
   updateAnimalInsecure,
 } from '../../../database/animals';
+import { createSessionInsecure } from '../../../database/sessions';
+import { createUserInsecure, getUserInsecure } from '../../../database/users';
 import type { Resolvers } from '../../../graphql/graphqlGeneratedTypes';
 import type { Animal } from '../../../migrations/00000-createTableAnimals';
 
@@ -26,6 +31,11 @@ const typeDefs = gql`
     firstName: String!
     type: String!
     accessory: String
+  }
+
+  type User {
+    id: ID!
+    username: String!
   }
 
   type Query {
@@ -44,6 +54,8 @@ const typeDefs = gql`
       type: String!
       accessory: String
     ): Animal
+
+    register(username: String!, password: String!): User
   }
 `;
 
@@ -98,6 +110,57 @@ const resolvers: Resolvers = {
 
     deleteAnimal: async (parent, args) => {
       return await deleteAnimalInsecure(Number(args.id));
+    },
+
+    register: async (parent, args) => {
+      // 1. Check if required fields are present
+      if (
+        typeof args.username !== 'string' ||
+        typeof args.password !== 'string' ||
+        !args.username ||
+        !args.password
+      ) {
+        throw new GraphQLError('Required field missing');
+      }
+
+      // 2. Check if user already exist in the database
+      const user = await getUserInsecure(args.username);
+
+      if (user) {
+        throw new GraphQLError('Username already taken');
+      }
+
+      // 3. Hash the plain password from the user
+      const passwordHash = await bcrypt.hash(args.password, 12);
+
+      // 4. Save the user information with the hashed password in the database
+      const newUser = await createUserInsecure(args.username, passwordHash);
+
+      if (!newUser) {
+        throw new GraphQLError('Registration failed');
+      }
+
+      // 5. Create a token
+      const token = crypto.randomBytes(100).toString('base64');
+
+      // 6. Create the session record
+      const session = await createSessionInsecure(token, Number(newUser.id));
+
+      if (!session) {
+        throw new GraphQLError('Sessions creation failed');
+      }
+
+      (await cookies()).set({
+        name: 'sessionToken',
+        value: session.token,
+        httpOnly: true,
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24, // This is 24 hours
+        sameSite: 'lax', // For cross site scripting
+      });
+
+      return newUser;
     },
   },
 };
