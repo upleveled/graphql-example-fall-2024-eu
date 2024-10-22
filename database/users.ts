@@ -6,7 +6,7 @@ type UserWithPasswordHash = User & {
   passwordHash: string;
 };
 
-export const getUserInsecure = cache(async (username: string) => {
+export const getUserInsecure = cache(async (username: User['username']) => {
   const [user] = await sql<User[]>`
     SELECT
       users.id,
@@ -20,7 +20,7 @@ export const getUserInsecure = cache(async (username: string) => {
 });
 
 export const getUserWithPasswordHashInsecure = cache(
-  async (username: string) => {
+  async (username: User['username']) => {
     const [user] = await sql<UserWithPasswordHash[]>`
       SELECT
         *
@@ -34,7 +34,10 @@ export const getUserWithPasswordHashInsecure = cache(
 );
 
 export const createUserInsecure = cache(
-  async (username: string, passwordHash: string) => {
+  async (
+    username: User['username'],
+    passwordHash: UserWithPasswordHash['passwordHash'],
+  ) => {
     const [user] = await sql<User[]>`
       INSERT INTO
         users (username, password_hash)

@@ -1,9 +1,10 @@
 import { cache } from 'react';
+import type { User } from '../migrations/00002-createTableUsers';
 import type { Session } from '../migrations/00004-createTableSessions';
 import { sql } from './connect';
 
 export const createSessionInsecure = cache(
-  async (token: string, userId: number) => {
+  async (token: Session['token'], userId: User['id']) => {
     const [session] = await sql<Session[]>`
       INSERT INTO
         sessions (token, user_id)
