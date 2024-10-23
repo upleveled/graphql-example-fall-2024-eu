@@ -24,6 +24,10 @@ import type { Resolvers } from '../../../graphql/graphqlGeneratedTypes';
 import type { Animal } from '../../../migrations/00000-createTableAnimals';
 import { secureCookieOptions } from '../../../util/cookies';
 
+export type Context = {
+  sessionTokenCookie?: { value: string };
+};
+
 export type GraphqlResponseBody =
   | {
       animal: Animal;
