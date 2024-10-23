@@ -47,6 +47,12 @@ const typeDefs = gql`
     username: String!
   }
 
+  type Note {
+    id: ID!
+    title: String
+    textContent: String
+  }
+
   type Query {
     animals: [Animal]
     animal(id: ID!): Animal
