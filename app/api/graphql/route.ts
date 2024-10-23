@@ -15,7 +15,11 @@ import {
   updateAnimalInsecure,
 } from '../../../database/animals';
 import { createSessionInsecure } from '../../../database/sessions';
-import { createUserInsecure, getUserInsecure } from '../../../database/users';
+import {
+  createUserInsecure,
+  getUserInsecure,
+  getUserWithPasswordHashInsecure,
+} from '../../../database/users';
 import type { Resolvers } from '../../../graphql/graphqlGeneratedTypes';
 import type { Animal } from '../../../migrations/00000-createTableAnimals';
 
@@ -56,6 +60,7 @@ const typeDefs = gql`
     ): Animal
 
     register(username: String!, password: String!): User
+    login(username: String!, password: String!): User
   }
 `;
 
@@ -161,6 +166,61 @@ const resolvers: Resolvers = {
       });
 
       return newUser;
+    },
+
+    login: async (parent, args) => {
+      if (
+        typeof args.username !== 'string' ||
+        typeof args.password !== 'string' ||
+        !args.username ||
+        !args.password
+      ) {
+        throw new GraphQLError('Required field missing');
+      }
+
+      // 3. verify the user credentials
+      const userWithPasswordHash = await getUserWithPasswordHashInsecure(
+        args.username,
+      );
+
+      if (!userWithPasswordHash) {
+        throw new GraphQLError('username or password not valid');
+      }
+
+      // 4. Validate the user password by comparing with hashed password
+      const passwordHash = await bcrypt.compare(
+        args.password,
+        userWithPasswordHash.passwordHash,
+      );
+
+      if (!passwordHash) {
+        throw new GraphQLError('username or password not valid');
+      }
+
+      // 5. Create a token
+      const token = crypto.randomBytes(100).toString('base64');
+
+      // 6. Create the session record
+      const session = await createSessionInsecure(
+        token,
+        userWithPasswordHash.id,
+      );
+
+      if (!session) {
+        throw new GraphQLError('Sessions creation failed');
+      }
+
+      (await cookies()).set({
+        name: 'sessionToken',
+        value: session.token,
+        httpOnly: true,
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24,
+        sameSite: 'lax',
+      });
+
+      return null;
     },
   },
 };
