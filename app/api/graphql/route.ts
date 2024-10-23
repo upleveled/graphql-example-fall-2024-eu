@@ -22,6 +22,7 @@ import {
 } from '../../../database/users';
 import type { Resolvers } from '../../../graphql/graphqlGeneratedTypes';
 import type { Animal } from '../../../migrations/00000-createTableAnimals';
+import { secureCookieOptions } from '../../../util/cookies';
 
 export type GraphqlResponseBody =
   | {
@@ -158,11 +159,7 @@ const resolvers: Resolvers = {
       (await cookies()).set({
         name: 'sessionToken',
         value: session.token,
-        httpOnly: true,
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 60 * 60 * 24, // This is 24 hours
-        sameSite: 'lax', // For cross site scripting
+        ...secureCookieOptions,
       });
 
       return newUser;
@@ -213,11 +210,7 @@ const resolvers: Resolvers = {
       (await cookies()).set({
         name: 'sessionToken',
         value: session.token,
-        httpOnly: true,
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 60 * 60 * 24,
-        sameSite: 'lax',
+        ...secureCookieOptions,
       });
 
       return null;
