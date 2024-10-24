@@ -8,6 +8,21 @@ type UserWithPasswordHash = User & {
   passwordHash: string;
 };
 
+export const getUser = cache(async (sessionToken: Session['token']) => {
+  const [user] = await sql<Pick<User, 'username'>[]>`
+    SELECT
+      users.username
+    FROM
+      users
+      INNER JOIN sessions ON (
+        sessions.token = ${sessionToken}
+        AND users.id = sessions.user_id
+        AND expiry_timestamp > now()
+      )
+  `;
+  return user;
+});
+
 export const getUserInsecure = cache(async (username: User['username']) => {
   const [user] = await sql<User[]>`
     SELECT
@@ -55,18 +70,3 @@ export const createUserInsecure = cache(
     return postgresToGraphql(user);
   },
 );
-
-export const getUser = cache(async (sessionToken: Session['token']) => {
-  const [user] = await sql<Pick<User, 'username'>[]>`
-    SELECT
-      users.username
-    FROM
-      users
-      INNER JOIN sessions ON (
-        sessions.token = ${sessionToken}
-        AND users.id = sessions.user_id
-        AND expiry_timestamp > now()
-      )
-  `;
-  return user;
-});
