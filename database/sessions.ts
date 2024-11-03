@@ -17,6 +17,9 @@ export const getValidSession = cache(async (sessionToken: Session['token']) => {
   return session;
 });
 
+// Secure database queries start here
+// All queries not marked `Insecure` use session tokens to authenticate the user
+
 export const createSessionInsecure = cache(
   async (token: Session['token'], userId: User['id']) => {
     const [session] = await sql<Session[]>`

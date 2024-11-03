@@ -61,6 +61,9 @@ export const deleteAnimal = cache(async (sessionToken: string, id: number) => {
   return postgresToGraphql(animal);
 });
 
+// Insecure database queries start here
+// All queries marked `Insecure` do not use session tokens to authenticate the user
+
 export const getAnimalsInsecure = cache(async () => {
   const animals = await sql<Animal[]>`
     SELECT
