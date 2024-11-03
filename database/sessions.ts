@@ -17,6 +17,18 @@ export const getValidSession = cache(async (sessionToken: Session['token']) => {
   return session;
 });
 
+export const deleteSession = cache(async (sessionToken: Session['token']) => {
+  const [session] = await sql<Pick<Session, 'id' | 'token'>[]>`
+    DELETE FROM sessions
+    WHERE
+      sessions.token = ${sessionToken}
+    RETURNING
+      sessions.id,
+      sessions.token
+  `;
+  return session;
+});
+
 // Secure database queries start here
 // All queries not marked `Insecure` use session tokens to authenticate the user
 
@@ -45,15 +57,3 @@ export const createSessionInsecure = cache(
     return session;
   },
 );
-
-export const deleteSession = cache(async (sessionToken: Session['token']) => {
-  const [session] = await sql<Pick<Session, 'id' | 'token'>[]>`
-    DELETE FROM sessions
-    WHERE
-      sessions.token = ${sessionToken}
-    RETURNING
-      sessions.id,
-      sessions.token
-  `;
-  return session;
-});
