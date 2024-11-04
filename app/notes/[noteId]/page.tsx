@@ -16,8 +16,7 @@ export default async function NotePage(props: Props) {
   const sessionTokenCookie = (await cookies()).get('sessionToken');
 
   // 2. Check if the note exists
-  const noteExists = await selectNoteExists(noteId);
-  if (!noteExists) {
+  if (!(await selectNoteExists(noteId))) {
     return (
       <div>
         <h1>Error loading note {noteId}</h1>
